@@ -1,26 +1,26 @@
 const graphql = require("graphql");
-const {GraphQLList, GraphQLID} = graphql;
-const {UserType} = require("../schemas/user");
-const UserModel = require("../../models/user");
+const {GraphQLID, GraphQLList} = graphql;
+const {CouponType} = require("../schemas/coupon");
+const CouponModel = require('../../models/coupon')
 const requireAuth = require('../../middlewares/requireAuth')
 const requireAdmin = require('../../middlewares/requireAdmin')
+const requireMyCoupon = require('../../middlewares/requireMyCoupon')
 
-
-exports.fetchUsers = {
-    type: GraphQLList(UserType),
+exports.fetchCoupons = {
+    type: GraphQLList(CouponType),
     resolve: async (parent, args, context) => {
         const auth_user = await requireAuth(context)
         await requireAdmin(auth_user.type)
-        return UserModel.find();
+        return CouponModel.find();
     },
 };
 
-exports.fetchUser = {
-    type: UserType,
+exports.fetchCoupon = {
+    type: CouponType,
     args: {id: {type: GraphQLID}},
     resolve: async (parent, args, context) => {
         const auth_user = await requireAuth(context)
-        if (auth_user.type !== 'admin' && auth_user.id !== args.id) throw Error('Vous ne pouvez pas recuperer cet utilisateur')
-        return UserModel.findById(args.id);
+        await requireMyCoupon(auth_user, args.id)
+        return CouponModel.findById(args.id);
     },
 };
