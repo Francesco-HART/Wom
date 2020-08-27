@@ -1,13 +1,12 @@
 const graphql = require('graphql')
-const {AddressType} = require('../schemas/address')
+const {CouponType} = require('../schemas/coupon')
 const {GraphQLID, GraphQLNonNull, GraphQLString, GraphQLList} = graphql
-const AddressModel = require('../../models/address')
-const requireMyAddress = require('../../middlewares/requireMyAddress')
+const CouponModel = require('../../models/coupon')
+const requireMyCoupon = require('../../middlewares/requireMyCoupon')
 
 
-
-exports.deleteAddress = {
-    type: AddressType,
+exports.deleteCoupon = {
+    type: CouponType,
     args: {
         id: {type: GraphQLNonNull(GraphQLString)}
     },
@@ -16,8 +15,8 @@ exports.deleteAddress = {
         return new Promise(async (resolve, reject) => {
             const auth_user = await requireAuth(context);
             await requireAdmin(auth_user.type);
-            await requireMyAddress(auth_user, args.id)
-            AddressModel.findOneAndDelete({_id: args.id})
+            await requireMyCoupon(auth_user, args.id)
+            CouponModel.findOneAndDelete({_id: args.id})
                 .then((deleted_user) => {
                     resolve(deleted_user);
                 })
@@ -27,4 +26,3 @@ exports.deleteAddress = {
         });
     }
 }
-

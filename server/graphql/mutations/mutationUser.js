@@ -1,24 +1,34 @@
 const graphql = require('graphql')
 const {UserType} = require('../schemas/user')
 const {Type} = require('../schemas/user')
-const {AddressType} = require('../schemas/address')
 const {GraphQLID, GraphQLNonNull, GraphQLString, GraphQLObjectType} = graphql
-const User = require('../../models/user')
-const Address = require('../../models/address')
+const UserModel = require('../../models/user')
+const UserLogsModel = require('../../models/actions/userLogs')
 
 
-exports.addUser =
-    {
-        type: UserType,
-        args: {
-            login: {type: new GraphQLNonNull(GraphQLID)},
-            insta: {type: new GraphQLNonNull(GraphQLString)},
-            list_address: {type: GraphQLID},
-            email: {type: new GraphQLNonNull(GraphQLString)},
-            phone_number: {type: new GraphQLNonNull(GraphQLString)},
-            password: {type: new GraphQLNonNull(GraphQLString)},
-           // preferences: {type: new GraphQLObjectType(GraphQLString)}
-        },
-        resolve(parent, args) {
-        }
+exports.deleteUser = {
+    type: UserType,
+    args: {
+        id: {type: GraphQLNonNull(GraphQLString)}
+    },
+
+    resolve: (parent, args, context) => {
+        return new Promise(async (resolve, reject) => {
+            const auth_user = await requireAuth(context);
+            await requireAdmin(auth_user.type);
+
+            UserModel.findOneAndDelete({_id: args.id})
+                .then((deleted_user) => {
+                    new UserLogsModel({
+                        type: "delete_user",
+                        user: auth_user.id,
+                        target: {login: deleted_user.login},
+                    }).save();
+                    resolve(deleted_user);
+                })
+                .catch((err) => {
+                    reject(Error(err));
+                });
+        });
     }
+}

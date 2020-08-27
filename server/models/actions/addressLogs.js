@@ -1,20 +1,11 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const UserLogsSchema = new Schema({
+const AddressLogs = new Schema({
   type: {
     type: String,
     required: true,
-    enum: [
-      "create_user",
-      "update_user",
-      "delete_user",
-      "update_account",
-      "update_account_password",
-      "add_user_address",
-      "update_user_address",
-      "delete_user_address",
-    ],
+    enum: ["create_address", "update_address", "delete_address"],
   },
   user: { type: Schema.Types.ObjectId, required: true, ref: "user" },
   target: { type: Schema.Types.ObjectId, ref: "user" },
@@ -27,5 +18,5 @@ actionUserSchema.index({ target: 1 });
 actionUserSchema.index({ date: 1 });
 actionUserSchema.index({ type: 1 });
 
-const ModelClass = mongoose.model("action_user", UserLogsSchema);
+const ModelClass = mongoose.model("action_address", AddressLogs);
 module.exports = ModelClass;
