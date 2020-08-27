@@ -1,2 +1,5 @@
 .idea
 dc.yml
+node_modules
+config.json
+.env
