@@ -9,11 +9,22 @@ const CouponSchema = new Schema({
     required: true,
     trim: true,
   },
+  status: {
+    type: String,
+    required: true,
+    enum: ["toDo", "inProgress", "valid", "neverValid", "refuse"],
+    default: "user",
+  },
   contribution: { type: String, required: true, trim: true },
-  start: { type: Date, default: Date.now },
+  date_start: { type: Date, default: Date.now },
   //Date.now + 1
-  end: { type: Date },
+  date_end: { type: Date },
 });
 
+UserSchema.pre("save", function save(next) {
+  const coupon = this;
+  coupon.status = "toDo";
+  next();
+});
 const ModelClass = mongoose.model("coupon", CouponSchema);
 module.exports = ModelClass;

@@ -12,8 +12,28 @@ const CouponModel = require("../../models/coupon");
 const { AddressType } = require("./address");
 const { UserType } = require("./user");
 
+const Status = new GraphQLEnumType({
+  name: "Status",
+  values: {
+    toDo: {
+      value: "toDo",
+    },
+    inProgress: {
+      value: "inProgress",
+    },
+    valid: {
+      value: "valid",
+    },
+    neverValid: {
+      value: "neverValid",
+    },
+    refuse: {
+      value: "refuse",
+    },
+  },
+});
 exports.CouponType = new GraphQLObjectType({
-  name: "User",
+  name: "Coupon",
   fields: () => ({
     id: { type: GraphQLID },
     user: {
@@ -32,9 +52,10 @@ exports.CouponType = new GraphQLObjectType({
           .then((coupon) => coupon.address);
       },
     },
+    status: { type: Status },
     gratuity: { type: GraphQLString },
     contribution: { type: GraphQLString },
-    start: { type: GraphQLDateTime },
-    end: { type: GraphQLDateTime },
+    date_start: { type: GraphQLDateTime },
+    date_end: { type: GraphQLDateTime },
   }),
 });

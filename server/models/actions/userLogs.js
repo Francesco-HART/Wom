@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const UserLogs = new Schema({
+const actionUserSchema = new Schema({
   type: {
     type: String,
     required: true,
@@ -27,5 +27,5 @@ actionUserSchema.index({ target: 1 });
 actionUserSchema.index({ date: 1 });
 actionUserSchema.index({ type: 1 });
 
-const ModelClass = mongoose.model("action_user", UserLogs);
+const ModelClass = mongoose.model("action_user", actionUserSchema);
 module.exports = ModelClass;

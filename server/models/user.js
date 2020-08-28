@@ -43,6 +43,7 @@ const UserSchema = new Schema(
       type: String,
       required: true,
       enum: ["user", "admin", "address"],
+      default: "user",
     },
     password: {
       type: String,

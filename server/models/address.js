@@ -17,6 +17,7 @@ const AddressSchema = new Schema(
       immutable: true,
       trim: true,
     },
+    //gratuity {name : 'limite'}
     gratuity: Array(String),
     email: {
       type: String,
