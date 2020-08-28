@@ -45,10 +45,10 @@ app.use(
 
 app.use(Cookies.express({ keys: [process.env.COOKIE_KEY] }));
 
-const HTTP_PORT = process.env.PORT || 5000;
+const HTTP_PORT = process.env.PORT || 4000;
 
 module.exports = app;
 
 app.listen(HTTP_PORT, () => {
-  console.log("run on port 5000 ");
+  console.log("run on port 4000 ");
 });
