@@ -21,8 +21,8 @@ const CouponSchema = new Schema({
   date_end: { type: Date },
 });
 
-UserSchema.pre("save", function save(next) {
-  const coupon = this;
+CouponSchema.pre("save", function save(next) {
+  let coupon = this;
   coupon.status = "toDo";
   next();
 });

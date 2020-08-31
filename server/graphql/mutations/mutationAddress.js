@@ -3,18 +3,19 @@ const { AddressType } = require("../schemas/address");
 const { GraphQLID, GraphQLNonNull, GraphQLString, GraphQLList } = graphql;
 const UserModel = require("../../models/user");
 const AddressModel = require("../../models/address");
-
+const { GratuityType } = require("../schemas/address");
 const requireAuth = require("../../middlewares/requireAuth");
 const requireMyAddress = require("../../middlewares/requireMyAddress");
 const requireAdmin = require("../../middlewares/requireAdmin");
 
 exports.createAddress = {
-  type: UserType,
+  type: AddressType,
   args: {
     name: { type: GraphQLNonNull(GraphQLString) },
     address: { type: GraphQLNonNull(GraphQLString) },
-    gratuity: { type: GraphQLNonNull(GraphQLList(GraphQLString)) },
     email: { type: GraphQLNonNull(GraphQLString) },
+    gratuities: { type: GraphQLNonNull(GraphQLList(GratuityType)) },
+    image: { type: GraphQLString },
     phone_number: { type: GraphQLNonNull(GraphQLString) },
     validation_code: { type: GraphQLNonNull(GraphQLString) },
     user_id: { type: GraphQLID },
@@ -28,7 +29,7 @@ exports.createAddress = {
 
       new AddressModel(args)
         .save()
-        .then((created_address) => {
+        .then(async (created_address) => {
           try {
             if (args.user_id) {
               const user_to_update = await UserModel.findById(args.user_id);
@@ -58,12 +59,13 @@ exports.createAddress = {
 };
 
 exports.updateAddress = {
-  type: UserType,
+  type: AddressType,
   args: {
     id: { type: GraphQLNonNull(GraphQLString) },
     name: { type: GraphQLString },
     address: { type: GraphQLString },
-    gratuity: { type: GraphQLList(GraphQLString) },
+    gratuities: { type: GraphQLList(GratuityType) },
+    image: { type: GraphQLString },
     email: { type: GraphQLString },
     phone_number: { type: GraphQLString },
     validation_code: { type: GraphQLString },
@@ -71,16 +73,36 @@ exports.updateAddress = {
   resolve: (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
       const auth_user = await requireAuth(context);
+      let update = false;
       if (args.validation_code) await requireAdmin(auth_user.type);
       await requireMyAddress(auth_user.type);
       AddressModel.findOneAndUpdate({ _id: args.id }, args, { new: true })
-        .then((updated_user) => {
-          new UserLogsModel({
-            type: "create_user",
-            user: auth_user.id,
-            target: { login: updated_user.login },
-          }).save();
-          resolve(updated_user);
+        .then((updated_address) => {
+          updated_address = updated_address.gratuites.map((gratuity) => {
+            if (gratuity) {
+              if (gratuity.remaining_capacity === 0) {
+                update = true;
+                gratuity.available = false;
+              }
+            }
+            return gratuity;
+          });
+          if (update) {
+            AddressModel.findOneAndUpdate(
+              { _id: args.id },
+              { gatuities: updated_address.gratuites },
+              {
+                new: true,
+              }
+            )
+              .then((updated_address) => {
+                resolve(updated_address);
+              })
+              .catch((err) => {
+                reject(Error(err));
+              });
+          }
+          resolve(updated_address);
         })
         .catch((err) => {
           if (err.code === 11000) return reject(Error("element déjà utilisé"));
@@ -100,10 +122,37 @@ exports.deleteAddress = {
     return new Promise(async (resolve, reject) => {
       const auth_user = await requireAuth(context);
       await requireAdmin(auth_user.type);
-      await requireMyAddress(auth_user, args.id);
       AddressModel.findOneAndDelete({ _id: args.id })
         .then((deleted_user) => {
           resolve(deleted_user);
+        })
+        .catch((err) => {
+          reject(Error(err));
+        });
+    });
+  },
+};
+
+exports.resetGratuities = {
+  type: AddressType,
+  args: {
+    id: { type: GraphQLNonNull(GraphQLString) },
+  },
+
+  resolve: (parent, args, context) => {
+    return new Promise(async (resolve, reject) => {
+      const auth_user = await requireAuth(context);
+      await requireMyAddress(auth_user, args.id);
+      AddressModel.findById(args.id)
+        .then((address) => {
+          address.gratuities.map((gratuity) => {
+            if (gratuity && gratuities.capacity) {
+              gratuity.remaining_capacity = gratuity.capacity;
+              gratuity.available = true;
+              return gratuity;
+            }
+          });
+          resolve(address);
         })
         .catch((err) => {
           reject(Error(err));

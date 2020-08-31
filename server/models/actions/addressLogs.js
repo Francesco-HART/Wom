@@ -8,7 +8,7 @@ const actionUserSchema = new Schema({
     enum: ["create_address", "update_address", "delete_address"],
   },
   user: { type: Schema.Types.ObjectId, required: true, ref: "user" },
-  target: { type: Schema.Types.ObjectId, ref: "user" },
+  target: { type: Schema.Types.ObjectId, ref: "address" },
   date: { type: Date, required: true, default: Date.now },
   description: { type: String },
 });

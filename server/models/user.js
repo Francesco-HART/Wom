@@ -56,7 +56,7 @@ const UserSchema = new Schema(
 );
 
 UserSchema.pre("save", function save(next) {
-  const user = this;
+  let user = this;
   if (!user.isModified("password")) {
     return next();
   }

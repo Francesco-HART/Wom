@@ -73,7 +73,7 @@ exports.createCoupon = {
 };
 
 exports.updateCoupon = {
-  type: UserType,
+  type: CouponType,
   args: {
     id: { type: GraphQLNonNull(GraphQLString) },
     status: { type: GraphQLString },

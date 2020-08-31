@@ -1,13 +1,9 @@
 const graphql = require("graphql");
-const { addUser } = require("./mutations/mutationUser");
-const { addAddress } = require("./mutations/mutationAddress");
-
 const { GraphQLObjectType } = graphql;
-
+const { createCoupon } = require("./mutations/mutationCoupon");
 module.exports = new GraphQLObjectType({
   name: "Mutations",
   fields: () => ({
-    addUser,
-    addAddress,
+    createCoupon,
   }),
 });

@@ -21,6 +21,7 @@ module.exports = new GraphQLObjectType({
     fechOneAddress,
 
     fetchAuthUser,
+
     signUp,
     signOut,
     signIn,

@@ -18,7 +18,15 @@ const AddressSchema = new Schema(
       trim: true,
     },
     //gratuity {name : 'limite'}
-    gratuity: Array(String),
+    gratuities: [
+      {
+        available: { type: Boolean, default: true, require: true },
+        remaining_capacity: { type: Number, default: 3, require: true },
+        capacity: { type: Number, default: 3, require: true },
+        name: { type: String, require: true },
+        image: { type: String },
+      },
+    ],
     email: {
       type: String,
       lowercase: true,
@@ -33,6 +41,7 @@ const AddressSchema = new Schema(
       trim: true,
     },
     validation_code: { type: String, select: false },
+    image: { type: String },
     //parent_id: {type: Schema.Types.ObjectId, required: true, ref: 'user'}
   },
   { minimize: false } // in order to accept empty objects
@@ -40,13 +49,17 @@ const AddressSchema = new Schema(
 
 AddressSchema.pre("save", function (next) {
   // get access to the user model
-  const user = this;
+  let address = this;
+  address.gratuities.map((gratuity) => {
+    gratuity.remaining_capacity = gratuity.capacity;
+    return gratuity;
+  });
   // hash the password
-  bcrypt.hash(user.validation_code, 10, function (err, hash) {
+  bcrypt.hash(address.validation_code, 10, function (err, hash) {
     // return next here if NODE_ENV = test
     if (process.env.NODE_ENV === "test") return next();
     // set the hashed user validationCode
-    user.validation_code = hash;
+    address.validation_code = hash;
     next();
   });
 });

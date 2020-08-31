@@ -1,4 +1,5 @@
 const graphql = require("graphql");
+const graphqDate = require("graphql-iso-date");
 const {
   GraphQLObjectType,
   GraphQLID,
@@ -9,6 +10,7 @@ const {
 } = graphql;
 const { GraphQLDateTime } = graphqDate;
 const CouponModel = require("../../models/coupon");
+const { CouponType } = require("./coupon");
 const { AddressType } = require("./address");
 const { UserType } = require("./user");
 
