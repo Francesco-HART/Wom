@@ -18,16 +18,17 @@ const localLogin = new LocalStrategy({ usernameField: "email" }, function (
   User.findOne({ email: email.toLowerCase() }, function (err, user) {
     if (err) return done(err);
     if (!user) return done(null, false, "utilisateur non existant");
-
+    console.log(user);
     // Compare password
-    user.comparePassword(password, function (err, isMatch) {
+    /* user.comparePassword(password, function (err, isMatch) {
       if (err) return done(err);
       if (!isMatch) return done(null, false, "mot de passe invalide");
       let returned_user = Object.assign({}, user);
       returned_user = returned_user._doc;
       delete returned_user.password;
       return done(null, returned_user);
-    });
+    });*/
+    if (password === user.password) return done(null, user);
   })
     .select("+password")
     .populate("insta");
@@ -67,6 +68,7 @@ const jwtLogin = new JwtStrategy(jwtOptions, function (payload, done) {
 exports.signIn = ({ email, password, context }) => {
   return new Promise((resolve, reject) => {
     passport.authenticate("local", { session: false }, (err, user) => {
+      console.log(user, "userrr");
       if (err) return reject(err);
       if (!user) return reject("Identifiants invalides");
       // generate JWT

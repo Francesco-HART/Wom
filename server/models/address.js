@@ -6,9 +6,7 @@ const AddressSchema = new Schema(
   {
     name: {
       type: String,
-      unique: true,
       required: true,
-      immutable: true,
       trim: true,
     },
     address: {
@@ -36,7 +34,6 @@ const AddressSchema = new Schema(
     },
     phone_number: {
       type: String,
-      unique: true,
       required: true,
       trim: true,
     },

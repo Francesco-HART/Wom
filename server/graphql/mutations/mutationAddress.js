@@ -73,6 +73,8 @@ exports.updateAddress = {
   resolve: (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
       const auth_user = await requireAuth(context);
+      const address = await AddressModel.countDocuments({ name: args.name });
+      if (address > 1) reject("Nom deja existant");
       let update = false;
       if (args.validation_code) await requireAdmin(auth_user.type);
       await requireMyAddress(auth_user.type);
@@ -85,7 +87,7 @@ exports.updateAddress = {
                 gratuity.available = false;
               }
             }
-            return gratuity;
+            resolve(gratuity);
           });
           if (update) {
             AddressModel.findOneAndUpdate(

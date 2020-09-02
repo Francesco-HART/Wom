@@ -35,6 +35,7 @@ exports.UserType = new GraphQLObjectType({
     insta: { type: GraphQLString },
     phone_number: { type: GraphQLString },
     address: { type: GraphQLString },
+    email: { type: GraphQLString },
     list_address: {
       type: new GraphQLList(AddressType),
       resolve(parent, args) {

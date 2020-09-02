@@ -25,7 +25,7 @@ const UserSchema = new Schema(
         address: { type: AddressModel.schema },
       },
     ],
-    coupon: { type: CouponModel.schema },
+    coupon: { type: Schema.Types.ObjectId, ref: "coupon" },
     email: {
       type: String,
       lowercase: true,

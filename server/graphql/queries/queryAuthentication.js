@@ -13,26 +13,36 @@ exports.signUp = {
     login: { type: new GraphQLNonNull(GraphQLString) },
     insta: { type: new GraphQLNonNull(GraphQLString) },
     phone_number: { type: new GraphQLNonNull(GraphQLString) },
-    type: { type: new GraphQLNonNull(Type) },
     password: { type: new GraphQLNonNull(GraphQLString) },
   },
-  resolve(
+
+  resolve: (
     parent,
     { email, password, login, insta, phone_number, type },
     context
-  ) {
-    new UserModel({
-      email,
-      password,
-      login,
-      insta,
-      phone_number,
-      type,
-    })
-      .save()
-      .then((new_user) => {
-        return new_user;
-      });
+  ) => {
+    return new Promise(async (resolve, reject) => {
+      new UserModel({
+        email,
+        password,
+        login,
+        insta,
+        phone_number,
+      })
+        .save()
+        .then((new_user) => {
+          return resolve(new_user);
+        })
+        .catch((err) => {
+          if (err.code === 11000)
+            return reject(
+              Error(
+                "login ou email ou phoneNumber ou pseudo insta déjà utilisé"
+              )
+            );
+          reject(Error(err));
+        });
+    });
   },
 };
 
@@ -40,7 +50,7 @@ exports.signOut = {
   type: UserType,
   resolve: async (parent, args, context) => {
     await requireAuth(context);
-    return signOut();
+    return signOut(context);
   },
 };
 
