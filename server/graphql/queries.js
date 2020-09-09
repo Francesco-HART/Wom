@@ -2,7 +2,6 @@ const graphql = require("graphql");
 const { fetchUsers, fetchUser } = require("./queries/queryUser");
 const { fetchAddress, fechOneAddress } = require("./queries/queryAddress");
 const {
-  signUp,
   signOut,
   signIn,
   fetchAuthUser,
@@ -22,7 +21,6 @@ module.exports = new GraphQLObjectType({
 
     fetchAuthUser,
 
-    signUp,
     signOut,
     signIn,
   }),

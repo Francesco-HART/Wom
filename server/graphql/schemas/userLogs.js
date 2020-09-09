@@ -11,7 +11,7 @@ const {
 const { GraphQLDateTime } = graphqDate;
 
 const Type = new GraphQLEnumType({
-  name: "Type",
+  name: "TypeUserLogs",
   values: {
     create_user: { value: "create_user" },
     update_user: { value: "update_user" },
@@ -26,14 +26,14 @@ const Type = new GraphQLEnumType({
 });
 
 const UserTargetType = new GraphQLObjectType({
-  name: "Target",
+  name: "TargetUserLogs",
   fields: () => ({
     login: { type: GraphQLString },
   }),
 });
 
 module.exports = new GraphQLObjectType({
-  name: "userLogs",
+  name: "UserLogs",
   fields: () => ({
     id: { type: GraphQLID },
     type: { type: Type },

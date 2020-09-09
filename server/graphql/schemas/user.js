@@ -11,7 +11,7 @@ const { AddressType } = require("./address");
 const { UserModel } = require("../../models/user");
 
 const Type = new GraphQLEnumType({
-  name: "Type",
+  name: "TypeUser",
   values: {
     user: {
       value: "user",
@@ -31,6 +31,7 @@ exports.UserType = new GraphQLObjectType({
   name: "User",
   fields: () => ({
     id: { type: GraphQLID },
+    password: { type: GraphQLString },
     login: { type: GraphQLString },
     insta: { type: GraphQLString },
     phone_number: { type: GraphQLString },

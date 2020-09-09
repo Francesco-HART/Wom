@@ -6,6 +6,7 @@ const UserModel = require("../../models/user");
 const UserLogsModel = require("../../models/actions/userLogs");
 const requireAdmin = require("../../middlewares/requireAdmin");
 const requireAuth = require("../../middlewares/requireAuth");
+const bcrypt = require("bcryptjs");
 
 exports.createUser = {
   type: UserType,
@@ -19,26 +20,20 @@ exports.createUser = {
   },
   resolve: (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
-      // save new user
-      //TODO: verif if abo to insta wom
-      //TODO : verif valid phone_number
-      //TODO : verif if creator is connect and if user create can be admin, address or user
-      if (args.type !== "user") {
-        const auth_user = await requireAuth(context);
-        await requireAdmin(auth_user.type);
-      }
-      new UserModel(args)
+      const auth_user = await requireAuth(context);
+      await requireAdmin(auth_user.type);
+      await new UserModel(args)
         .save()
-        .then((created_user) => {
-          new UserLogsModel({
-            type: "create_user",
-            user: auth_user.id,
-            target: { login: created_user.login },
-          }).save();
-          resolve(created_user);
+        .then((new_user) => {
+          resolve(new_user);
         })
         .catch((err) => {
-          if (err.code === 11000) return reject(Error("Login déjà utilisé"));
+          if (err.code === 11000)
+            reject(
+              Error(
+                "login ou email ou phoneNumber ou pseudo insta déjà utilisé"
+              )
+            );
           reject(Error(err));
         });
     });
@@ -48,12 +43,11 @@ exports.createUser = {
 exports.updateUser = {
   type: UserType,
   args: {
-    id: { type: GraphQLNonNull(GraphQLString) },
+    id: { type: GraphQLNonNull(GraphQLID) },
     login: { type: GraphQLString },
     type: { type: GraphQLString },
     email: { type: GraphQLString },
     phone_number: { type: GraphQLString },
-    list_address: { type: GraphQLID },
     insta: { type: GraphQLString },
   },
   resolve: (parent, args, context) => {
@@ -86,7 +80,7 @@ exports.updateUserPwd = {
   resolve: (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
       const auth_user = await requireAuth(context);
-
+      //TOTO
       bcrypt.hash(args.password, 10, (bcryptErr, hash) => {
         if (bcryptErr) return reject(Error(bcryptErr));
         UserModel.findOneAndUpdate(

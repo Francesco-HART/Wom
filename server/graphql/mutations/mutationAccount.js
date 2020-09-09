@@ -1,10 +1,11 @@
 const graphql = require("graphql");
 const bcrypt = require("bcryptjs");
-const UserType = require("../schemas/user");
+const { UserType } = require("../schemas/user");
 const UserModel = require("../../models/user");
-const UserLogsModel = require("../../models/userLogs");
+const UserLogsModel = require("../../models/actions/userLogs");
 const { GraphQLNonNull, GraphQLString } = graphql;
 const requireAuth = require("../../middlewares/requireAuth");
+const requireAdmin = require("../../middlewares/requireAdmin");
 
 exports.updateAccount = {
   type: UserType,
@@ -17,7 +18,8 @@ exports.updateAccount = {
   resolve: (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
       const auth_user = await requireAuth(context);
-      if (args.type !== "user") {
+      if (args.type !== "user" || args.phone_number) {
+        //verif phonenumber
         await requireAdmin(auth_user.type);
       }
       UserModel.findOneAndUpdate({ _id: auth_user.id }, args, {
@@ -70,6 +72,28 @@ exports.updateAccountPwd = {
             });
         });
       });
+    });
+  },
+};
+
+exports.signUp = {
+  type: UserType,
+  args: {},
+  resolve: (parent, args, context) => {
+    return new Promise(async (resolve, reject) => {
+      // save new user
+      //TODO: verif if abo to insta wom
+      //TODO : verif valid phone_number
+      //TODO : verif if creator is connect and if user create can be admin, address or user
+      new UserModel(args)
+        .save()
+        .then((created_user) => {
+          resolve(created_user);
+        })
+        .catch((err) => {
+          if (err.code === 11000) return reject(Error("Login déjà utilisé"));
+          reject(Error(err));
+        });
     });
   },
 };

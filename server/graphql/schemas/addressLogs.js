@@ -11,7 +11,7 @@ const {
 const { GraphQLDateTime } = graphqDate;
 
 const Type = new GraphQLEnumType({
-  name: "Type",
+  name: "TypeAddressLogs",
   values: {
     create_address: { value: "create_address" },
     update_address: { value: "update_address" },
@@ -20,14 +20,14 @@ const Type = new GraphQLEnumType({
 });
 
 const GroupTargetType = new GraphQLObjectType({
-  name: "GroupType",
+  name: "AddressName",
   fields: () => ({
     name: { type: GraphQLString },
   }),
 });
 
 module.exports = new GraphQLObjectType({
-  name: "GroupLogs",
+  name: "AddressLogs",
   fields: () => ({
     id: { type: GraphQLID },
     type: { type: Type },

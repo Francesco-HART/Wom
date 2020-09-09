@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
-const bcrypt = require("bcrypt-nodejs");
+const bcrypt = require("bcryptjs");
 
 const AddressSchema = new Schema(
   {
@@ -44,20 +44,36 @@ const AddressSchema = new Schema(
   { minimize: false } // in order to accept empty objects
 );
 
-AddressSchema.pre("save", function (next) {
+AddressSchema.pre("save", function save(next) {
   // get access to the user model
   let address = this;
-  address.gratuities.map((gratuity) => {
-    gratuity.remaining_capacity = gratuity.capacity;
-    return gratuity;
-  });
+
   // hash the password
-  bcrypt.hash(address.validation_code, 10, function (err, hash) {
-    // return next here if NODE_ENV = test
-    if (process.env.NODE_ENV === "test") return next();
-    // set the hashed user validationCode
-    address.validation_code = hash;
-    next();
+  if (!address.isModified("validation_code")) {
+    return next();
+  }
+  bcrypt.genSalt(10, (err, salt) => {
+    if (err) {
+      return next(err);
+    }
+    bcrypt.hash(address.validation_code, 10, async (err, hash) => {
+      if (err) {
+        return next(err);
+      }
+      try {
+        const gratuities = await address.gratuities.map((gratuity) => {
+          gratuity.remaining_capacity = gratuity.capacity;
+          return gratuity;
+        });
+        address.validation_code = hash;
+        address.gratuities = gratuities;
+        console.log(address);
+        next();
+      } catch (err) {
+        return next(err);
+      }
+      // set the hashed user validationCode
+    });
   });
 });
 
