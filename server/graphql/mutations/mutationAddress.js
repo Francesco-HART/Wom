@@ -11,18 +11,20 @@ const {
   GraphQLBoolean,
   GraphQLInt,
 } = graphql;
-const UserModel = require("../../models/user");
+const AddressLogsModel = require("../../models/actions/addressLogs");
 const AddressModel = require("../../models/address");
 const requireAuth = require("../../middlewares/requireAuth");
 const requireMyAddress = require("../../middlewares/requireMyAddress");
 const requireAdmin = require("../../middlewares/requireAdmin");
+const requireAddress = require("../../middlewares/requireAddress");
 
 const GratuityInputType = new GraphQLInputObjectType({
   name: "GratuityInputType",
   fields: () => ({
     remaining_capacity: { type: GraphQLInt },
-    capacity: { type: GraphQLInt },
+    capacity: { type: GraphQLNonNull(GraphQLInt) },
     name: { type: GraphQLNonNull(GraphQLString) },
+    available: { type: GraphQLBoolean },
     image: { type: GraphQLString },
   }),
 });
@@ -40,19 +42,23 @@ exports.createAddress = {
   },
   resolve: (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
-      // save new user
-      //asign to user
-      const auth_user = await requireAuth(context);
-      await requireAdmin(auth_user.type);
-      new AddressModel(args)
-        .save()
-        .then(async (created_address) => {
-          resolve(created_address);
-        })
-        .catch((err) => {
-          if (err.code === 11000) return reject(Error("Login déjà utilisé"));
-          reject(Error(err));
-        });
+      try {
+        // save new user
+        //asign to user
+        const auth_user = await requireAuth(context);
+        await requireAdmin(auth_user.type);
+        new AddressModel(args)
+          .save()
+          .then(async (created_address) => {
+            resolve(created_address);
+          })
+          .catch((err) => {
+            if (err.code === 11000) return reject(Error("Login déjà utilisé"));
+            reject(Error(err));
+          });
+      } catch (err) {
+        reject(Error(err));
+      }
     });
   },
 };
@@ -71,52 +77,70 @@ exports.updateAddress = {
   },
   resolve: (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
-      const auth_user = await requireAuth(context);
-      const address = await AddressModel.countDocuments({ name: args.name });
-      if (address > 1) reject("Nom deja existant");
-      let update = false;
-      if (args.validation_code) await requireAdmin(auth_user.type);
-      await requireMyAddress(auth_user.type);
-      //update address
-      AddressModel.findOneAndUpdate({ _id: args.id }, args, { new: true })
-        .then((updated_address) => {
-          //verif if gratuuiy capacity is done and update gratuity status to availale = false
-          updated_address_gratuities = updated_address.gratuites.map(
-            (gratuity) => {
-              if (gratuity) {
-                if (gratuity.remaining_capacity === 0) {
-                  update = true;
-                  gratuity.available = false;
+      try {
+        const auth_user = await requireAuth(context);
+        //address can't update validation code
+        if (args.validation_code) await requireAdmin(auth_user.type);
+        await requireAddress(auth_user.type);
+        await requireMyAddress(auth_user, args.id);
+        let update = false;
+        let count_address_name = 0;
+        const address = await AddressModel.findById(args.id);
+        if (!address) reject(Error("Adresse non-existante"));
+        //verif if name is alredy use
+        if (args.name && address.name !== args.name)
+          count_address_name = await AddressModel.countDocuments({
+            name: args.name,
+          });
+        if (count_address_name >= 1) reject(Error("Nom deja existant"));
+
+        //update address
+        AddressModel.findOneAndUpdate({ _id: args.id }, args, { new: true })
+          .then(async (updated_address) => {
+            //verif if gratuty capacity is done and update gratuity status to availale = false
+            let updated_address_gratuities = await updated_address.gratuities.map(
+              (gratuity) => {
+                if (gratuity) {
+                  if (gratuity.remaining_capacity === 0) {
+                    update = true;
+                    //la gratuity n'est plus valide
+                    gratuity.available = false;
+                  }
+                  //if in previous update gratuity capacity is update to capacity < remaning_capacity update remaining capacity = capacity
+                  if (gratuity.capacity < gratuity.remaining_capacity) {
+                    update = true;
+                    gratuity.remaining_capacity = gratuity.capacity;
+                  }
                 }
-                //if in previous update gratuity capacity is update to capacity < remaning_capacity update remaining capacity = capacity
-                if (gratuity.capacity < gratuity.remaining_capacity)
-                  gratuity.remaining_capacity = gratuity.capacity;
+
+                return gratuity;
               }
-              return gratuity;
+            );
+            if (update) {
+              AddressModel.findOneAndUpdate(
+                { _id: args.id },
+                { gratuities: updated_address_gratuities },
+                {
+                  new: true,
+                }
+              )
+                .then((updated_address) => {
+                  resolve(updated_address);
+                })
+                .catch((err) => {
+                  reject(Error(err));
+                });
             }
-          );
-          console.log(gratuity);
-          if (update) {
-            AddressModel.findOneAndUpdate(
-              { _id: args.id },
-              { gatuities: updated_address_gratuities },
-              {
-                new: true,
-              }
-            )
-              .then((updated_address) => {
-                resolve(updated_address);
-              })
-              .catch((err) => {
-                reject(Error(err));
-              });
-          }
-          resolve(updated_address);
-        })
-        .catch((err) => {
-          if (err.code === 11000) return reject(Error("element déjà utilisé"));
-          reject(Error(err));
-        });
+            resolve(updated_address);
+          })
+          .catch((err) => {
+            if (err.code === 11000)
+              return reject(Error("element déjà utilisé"));
+            reject(Error(err));
+          });
+      } catch (err) {
+        reject(Error(err));
+      }
     });
   },
 };
@@ -129,15 +153,19 @@ exports.deleteAddress = {
 
   resolve: (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
-      const auth_user = await requireAuth(context);
-      await requireAdmin(auth_user.type);
-      AddressModel.findOneAndDelete({ _id: args.id })
-        .then((deleted_user) => {
-          resolve(deleted_user);
-        })
-        .catch((err) => {
-          reject(Error(err));
-        });
+      try {
+        const auth_user = await requireAuth(context);
+        await requireAdmin(auth_user.type);
+        AddressModel.findOneAndDelete({ _id: args.id })
+          .then((deleted_user) => {
+            resolve(deleted_user);
+          })
+          .catch((err) => {
+            reject(Error(err));
+          });
+      } catch (err) {
+        reject(Error(err));
+      }
     });
   },
 };
@@ -150,32 +178,56 @@ exports.resetGratuities = {
 
   resolve: (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
-      const auth_user = await requireAuth(context);
-      await requireMyAddress(auth_user, args.id);
-      AddressModel.findById(args.id)
-        .then((address) => {
-          const updated_remaining_capacity = address.gratuities.map(
-            (gratuity) => {
-              gratuity.remaining_capacity = gratuity.capacity;
-              gratuity.available = true;
-              return gratuity;
-            }
-          );
-          AddressModel.findOneAndUpdate(
-            { _id: args.id },
-            { gatuities: updated_remaining_capacity },
-            { new: true }
-          )
-            .then((updated_address) => {
-              resolve(updated_address);
-            })
-            .catch((err) => {
-              reject(Error(err));
-            });
-        })
-        .catch((err) => {
-          reject(Error(err));
-        });
+      try {
+        const auth_user = await requireAuth(context);
+        await requireAddress(auth_user.type);
+        await requireMyAddress(auth_user, args.id);
+        AddressModel.findById(args.id)
+          .then((address) => {
+            const updated_remaining_capacity = address.gratuities.map(
+              (gratuity) => {
+                gratuity.remaining_capacity = gratuity.capacity;
+                gratuity.available = true;
+                return gratuity;
+              }
+            );
+
+            AddressModel.findOneAndUpdate(
+              { _id: args.id },
+              { gratuities: updated_remaining_capacity },
+              { new: true }
+            )
+              .then((updated_address) => {
+                resolve(updated_address);
+              })
+              .catch((err) => {
+                reject(Error(err));
+              });
+          })
+          .catch((err) => {
+            reject(Error(err));
+          });
+      } catch (err) {
+        reject(Error(err));
+      }
+    });
+  },
+};
+
+exports.updateGratuity = {
+  type: AddressType,
+  args: {
+    id: { type: GraphQLNonNull(GraphQLID) },
+    gratuities: { type: GraphQLNonNull(GratuityInputType) },
+  },
+
+  resolve: (parent, args, context) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        await requireAuth(context);
+      } catch (err) {
+        reject(Error(err));
+      }
     });
   },
 };

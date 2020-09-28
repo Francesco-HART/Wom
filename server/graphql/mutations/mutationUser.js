@@ -20,22 +20,29 @@ exports.createUser = {
   },
   resolve: (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
-      const auth_user = await requireAuth(context);
-      await requireAdmin(auth_user.type);
-      await new UserModel(args)
-        .save()
-        .then((new_user) => {
-          resolve(new_user);
-        })
-        .catch((err) => {
-          if (err.code === 11000)
-            reject(
-              Error(
-                "login ou email ou phoneNumber ou pseudo insta déjà utilisé"
-              )
-            );
-          reject(Error(err));
-        });
+      try {
+        const auth_user = await requireAuth(context);
+
+        await requireAdmin(auth_user.type);
+        console.log("icii");
+
+        await new UserModel(args)
+          .save()
+          .then((new_user) => {
+            resolve(new_user);
+          })
+          .catch((err) => {
+            if (err.code === 11000)
+              reject(
+                Error(
+                  "login ou email ou phoneNumber ou pseudo insta déjà utilisé"
+                )
+              );
+            reject(Error(err));
+          });
+      } catch (err) {
+        reject(Error(err));
+      }
     });
   },
 };
@@ -50,23 +57,27 @@ exports.updateUser = {
     phone_number: { type: GraphQLString },
     insta: { type: GraphQLString },
   },
-  resolve: (parent, args, context) => {
+  resolve: async (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
-      const auth_user = await requireAuth(context);
-      requireAdmin(auth_user.type);
-      UserModel.findOneAndUpdate({ _id: args.id }, args, { new: true })
-        .then((updated_user) => {
-          new UserLogsModel({
-            type: "create_user",
-            user: auth_user.id,
-            target: { login: updated_user.login },
-          }).save();
-          resolve(updated_user);
-        })
-        .catch((err) => {
-          if (err.code === 11000) return reject(Error("Login déjà utilisé"));
-          reject(Error(err));
-        });
+      try {
+        const auth_user = await requireAuth(context);
+        await requireAdmin(auth_user.type);
+        UserModel.findOneAndUpdate({ _id: args.id }, args, { new: true })
+          .then((updated_user) => {
+            new UserLogsModel({
+              type: "create_user",
+              user: auth_user.id,
+              target: { login: updated_user.login },
+            }).save();
+            resolve(updated_user);
+          })
+          .catch((err) => {
+            if (err.code === 11000) return reject(Error("Login déjà utilisé"));
+            reject(Error(err));
+          });
+      } catch (err) {
+        reject(Error(err));
+      }
     });
   },
 };
@@ -79,27 +90,31 @@ exports.updateUserPwd = {
   },
   resolve: (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
-      const auth_user = await requireAuth(context);
-      //TOTO
-      bcrypt.hash(args.password, 10, (bcryptErr, hash) => {
-        if (bcryptErr) return reject(Error(bcryptErr));
-        UserModel.findOneAndUpdate(
-          { _id: args.id },
-          { password: hash },
-          { new: true }
-        )
-          .then((updated_user) => {
-            new UserLogsModel({
-              type: "update_user_password",
-              user: auth_user.id,
-              target: { login: updated_user.login },
-            }).save();
-            resolve(updated_user);
-          })
-          .catch((err) => {
-            reject(Error(err));
-          });
-      });
+      try {
+        const auth_user = await requireAuth(context);
+        //TOTO
+        bcrypt.hash(args.password, 10, (bcryptErr, hash) => {
+          if (bcryptErr) return reject(Error(bcryptErr));
+          UserModel.findOneAndUpdate(
+            { _id: args.id },
+            { password: hash },
+            { new: true }
+          )
+            .then((updated_user) => {
+              new UserLogsModel({
+                type: "update_user_password",
+                user: auth_user.id,
+                target: { login: updated_user.login },
+              }).save();
+              resolve(updated_user);
+            })
+            .catch((err) => {
+              reject(Error(err));
+            });
+        });
+      } catch (err) {
+        reject(Error(err));
+      }
     });
   },
 };
@@ -112,21 +127,25 @@ exports.deleteUser = {
 
   resolve: (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
-      const auth_user = await requireAuth(context);
-      await requireAdmin(auth_user.type);
+      try {
+        const auth_user = await requireAuth(context);
+        await requireAdmin(auth_user.type);
 
-      UserModel.findOneAndDelete({ _id: args.id })
-        .then((deleted_user) => {
-          new UserLogsModel({
-            type: "delete_user",
-            user: auth_user.id,
-            target: { login: deleted_user.login },
-          }).save();
-          resolve(deleted_user);
-        })
-        .catch((err) => {
-          reject(Error(err));
-        });
+        UserModel.findOneAndDelete({ _id: args.id })
+          .then((deleted_user) => {
+            new UserLogsModel({
+              type: "delete_user",
+              user: auth_user.id,
+              target: { login: deleted_user.login },
+            }).save();
+            resolve(deleted_user);
+          })
+          .catch((err) => {
+            reject(Error(err));
+          });
+      } catch (err) {
+        reject(Error(err));
+      }
     });
   },
 };

@@ -20,8 +20,12 @@ exports.updateUserAddressExpiration = {
   },
   resolve: (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
-      const auth_user = await requireAuth(context);
-      await requireAdmin(auth_user.type);
+      try {
+        const auth_user = await requireAuth(context);
+        await requireAdmin(auth_user.type);
+      } catch (err) {
+        reject(Error(err));
+      }
     });
   },
 };
@@ -36,38 +40,42 @@ exports.addUserAdress = {
 
   resolve: (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
-      const auth_user = await requireAuth(context);
-      await requireAdmin(auth_user.type);
-      UserModel.findById(args.id_user).then(async (user) => {
-        await requireAddress(user.type);
-        AddressModel.findOne({ _id: args.id_address })
-          .lean()
-          .then(async (adress) => {
-            const user_to_update = await User.findOne({
-              _id: args.id_user,
-            }).select("list_adress");
-            // if the user already have the adress => do nothing
-            if (
-              user_to_update.list_address.findIndex(
-                (user_adress) =>
-                  user_adress.address._id.toString() ===
-                  args.id_address.toString()
-              ) > 0
-            )
-              resolve(user_to_update);
+      try {
+        const auth_user = await requireAuth(context);
+        await requireAdmin(auth_user.type);
+        UserModel.findById(args.id_user).then(async (user) => {
+          await requireAddress(user.type);
+          AddressModel.findOne({ _id: args.id_address })
+            .lean()
+            .then(async (adress) => {
+              const user_to_update = await User.findOne({
+                _id: args.id_user,
+              }).select("list_adress");
+              // if the user already have the adress => do nothing
+              if (
+                user_to_update.list_address.findIndex(
+                  (user_adress) =>
+                    user_adress.address._id.toString() ===
+                    args.id_address.toString()
+                ) > 0
+              )
+                resolve(user_to_update);
 
-            // find and update
-            User.findOneAndUpdate(
-              { _id: args.user_id },
-              {
-                $push: {
-                  list_address: { address: adress, ...args.expiration },
+              // find and update
+              User.findOneAndUpdate(
+                { _id: args.user_id },
+                {
+                  $push: {
+                    list_address: { address: adress, ...args.expiration },
+                  },
                 },
-              },
-              { new: true }
-            );
-          });
-      });
+                { new: true }
+              );
+            });
+        });
+      } catch (err) {
+        reject(Error(err));
+      }
     });
   },
 };
@@ -81,17 +89,21 @@ exports.deleteUserAddress = {
 
   resolve: (parent, args, context) => {
     return new Promise(async (resolve, reject) => {
-      const auth_user = await requireAuth(context);
-      await requireAdmin(auth_user.type);
-      User.findOneAndUpdate(
-        { _id: args.id_user },
-        { $pull: { list_address: { "adress._id": args.id_address } } },
-        { new: true }
-      )
-        .then((updated_user) => {
-          return resolve(updated_user);
-        })
-        .catch((err) => reject(err.message));
+      try {
+        const auth_user = await requireAuth(context);
+        await requireAdmin(auth_user.type);
+        User.findOneAndUpdate(
+          { _id: args.id_user },
+          { $pull: { list_address: { "adress._id": args.id_address } } },
+          { new: true }
+        )
+          .then((updated_user) => {
+            return resolve(updated_user);
+          })
+          .catch((err) => reject(err.message));
+      } catch (err) {
+        reject(Error(err));
+      }
     });
   },
 };

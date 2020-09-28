@@ -6,7 +6,12 @@ const {
   signUp,
   updateAccount,
 } = require("./mutations/mutationAccount");
-const { createAddress } = require("./mutations/mutationAddress");
+const {
+  createAddress,
+  updateAddress,
+  deleteAddress,
+  resetGratuities,
+} = require("./mutations/mutationAddress");
 const {
   createUser,
   updateUser,
@@ -20,10 +25,14 @@ module.exports = new GraphQLObjectType({
     //signUp,
     updateUserPwd,
     updateUser,
-    updateAccount,
-    updateAccountPwd,
     deleteUser,
 
+    updateAccount,
+    updateAccountPwd,
+
     createAddress,
+    updateAddress,
+    deleteAddress,
+    resetGratuities,
   }),
 });

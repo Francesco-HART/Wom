@@ -23,7 +23,7 @@ exports.fetchAddress = {
   },
 };
 
-exports.fechOneAddress = {
+exports.fetchOneAddress = {
   type: AddressType,
   args: { id: { type: GraphQLID } },
   resolve: async (parent, args, context) => {
