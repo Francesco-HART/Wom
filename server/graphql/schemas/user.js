@@ -1,4 +1,5 @@
 const graphql = require("graphql");
+const graphqDate = require("graphql-iso-date");
 const {
   GraphQLObjectType,
   GraphQLID,
@@ -6,7 +7,7 @@ const {
   GraphQLEnumType,
   GraphQLList,
 } = graphql;
-
+const { GraphQLDate } = graphqDate;
 const { AddressType } = require("./address");
 const { UserModel } = require("../../models/user");
 
@@ -27,6 +28,21 @@ const Type = new GraphQLEnumType({
 
 exports.Type = Type;
 
+const UserAddressType = new GraphQLObjectType({
+  name: "UserAddress",
+  fields: () => ({
+    address: {
+      type: AddressType,
+      resolve(parent, args) {
+        return UserModel.findById(parent.id)
+          .populate("list_address")
+          .then((user) => user.group);
+      },
+    },
+    expiration: { type: GraphQLDate },
+  }),
+});
+
 exports.UserType = new GraphQLObjectType({
   name: "User",
   fields: () => ({
@@ -38,12 +54,7 @@ exports.UserType = new GraphQLObjectType({
     address: { type: GraphQLString },
     email: { type: GraphQLString },
     list_address: {
-      type: new GraphQLList(AddressType),
-      resolve(parent, args) {
-        return UserModel.findById(parent.id)
-          .populate("list_address")
-          .then((user) => user.group);
-      },
+      type: new GraphQLList(UserAddressType),
     },
     type: { type: Type },
   }),

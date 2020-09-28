@@ -2,38 +2,27 @@ const graphql = require("graphql");
 const graphqDate = require("graphql-iso-date");
 
 const { AddressType } = require("../schemas/address");
-const { GraphQLID, GraphQLNonNull, GraphQLString, GraphQLList } = graphql;
+const {
+  GraphQLID,
+  GraphQLNonNull,
+  GraphQLString,
+  GraphQLList,
+  GraphQLInputObjectType,
+} = graphql;
 const UserModel = require("../../models/user");
 const AddressModel = require("../../models/address");
 const { GratuityType } = require("../schemas/address");
 const requireAuth = require("../../middlewares/requireAuth");
 const requireAdmin = require("../../middlewares/requireAdmin");
 const requireAddress = require("../../middlewares/requireAddress");
+const { UserType } = require("../schemas/user");
 
-const { GraphQLDateTime } = graphqDate;
+const { GraphQLDate } = graphqDate;
 
-exports.updateUserAddressExpiration = {
-  type: AddressType,
+exports.addUserAddress = {
+  type: UserType,
   args: {
-    id_address: { type: GraphQLNonNull(GraphQLString) },
-    id_user: { type: GraphQLNonNull(GraphQLString) },
-  },
-  resolve: (parent, args, context) => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const auth_user = await requireAuth(context);
-        await requireAdmin(auth_user.type);
-      } catch (err) {
-        reject(Error(err));
-      }
-    });
-  },
-};
-
-exports.addUserAdress = {
-  type: AddressType,
-  args: {
-    expiration: { type: GraphQLNonNull() },
+    expiration: { type: GraphQLNonNull(GraphQLDate) },
     id_address: { type: GraphQLNonNull(GraphQLString) },
     id_user: { type: GraphQLNonNull(GraphQLString) },
   },
@@ -80,8 +69,26 @@ exports.addUserAdress = {
   },
 };
 
+exports.updateUserAddressExpiration = {
+  type: UserType,
+  args: {
+    id_address: { type: GraphQLNonNull(GraphQLString) },
+    id_user: { type: GraphQLNonNull(GraphQLString) },
+  },
+  resolve: (parent, args, context) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const auth_user = await requireAuth(context);
+        await requireAdmin(auth_user.type);
+      } catch (err) {
+        reject(Error(err));
+      }
+    });
+  },
+};
+
 exports.deleteUserAddress = {
-  type: AddressType,
+  type: UserType,
   args: {
     id_address: { type: GraphQLNonNull(GraphQLString) },
     id_user: { type: GraphQLNonNull(GraphQLString) },

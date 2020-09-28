@@ -18,6 +18,8 @@ const {
   updateUserPwd,
   deleteUser,
 } = require("./mutations/mutationUser");
+
+const { addUserAddress } = require("./mutations/mutationUserAddress");
 module.exports = new GraphQLObjectType({
   name: "Mutations",
   fields: () => ({
@@ -34,5 +36,7 @@ module.exports = new GraphQLObjectType({
     updateAddress,
     deleteAddress,
     resetGratuities,
+
+    addUserAddress,
   }),
 });
