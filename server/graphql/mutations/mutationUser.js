@@ -149,3 +149,24 @@ exports.deleteUser = {
     });
   },
 };
+
+exports.verifIsFollower = {
+  type: UserType,
+  args: {
+    id: { type: GraphQLNonNull(GraphQLString) },
+  },
+
+  resolve: (parent, args, context) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        if (true) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      } catch (err) {
+        reject(Error(err));
+      }
+    });
+  },
+};
