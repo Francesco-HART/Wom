@@ -12,6 +12,7 @@ exports.AddressType = new GraphQLObjectType({
     address: { type: GraphQLString },
     image: { type: GraphQLString },
     gratuities: { type: GraphQLList(GratuityType) },
+    siret: { type: GraphQLString },
     validation_code: {
       type: GraphQLString,
     },

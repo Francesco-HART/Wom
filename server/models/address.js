@@ -32,6 +32,12 @@ const AddressSchema = new Schema(
       required: true,
       trim: true,
     },
+    siret: {
+      type: String,
+      //unique: true,
+      required: true,
+      trim: true,
+    },
     phone_number: {
       type: String,
       required: true,

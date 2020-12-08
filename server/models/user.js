@@ -15,7 +15,6 @@ const UserSchema = new Schema(
     },
     insta: {
       type: String,
-      required: true,
       immutable: true,
       trim: true,
     },

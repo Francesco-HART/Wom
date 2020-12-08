@@ -7,7 +7,7 @@ const requireAuth = require("../../middlewares/requireAuth");
 const requireAddress = require("../../middlewares/requireAddress");
 const requireMyAddress = require("../../middlewares/requireMyAddress");
 
-exports.fetchAddress = {
+exports.fetchAddressByUser = {
   type: GraphQLList(AddressType),
   resolve: async (parent, args, context) => {
     const auth_user = await requireAuth(context);
@@ -19,6 +19,20 @@ exports.fetchAddress = {
       );
       params = { _id: { $in: user_address } };
     }
+    return AddressModel.find(params).sort({ _id: -1 });
+  },
+};
+
+exports.fetchAddress = {
+  type: GraphQLList(AddressType),
+  resolve: async (parent, args, context) => {
+    const auth_user = await requireAuth(context);
+    await requireAddress(auth_user.type);
+    let params = {};
+
+    const address = await AddressModel.find();
+    params = { _id: { $in: user_address } };
+
     return AddressModel.find(params).sort({ _id: -1 });
   },
 };
